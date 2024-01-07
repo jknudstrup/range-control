@@ -19,9 +19,7 @@ export const App = () => {
   }, []);
   return (
     <>
-      <div>
-        <h1>RANGE CONTROL</h1>
-      </div>
+      <div className="text-xl">RANGE CONTROL</div>
     </>
   );
 };
