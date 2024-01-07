@@ -9,8 +9,13 @@ lerna-debug.log*
 
 node_modules
 dist
+dev-dist
 dist-ssr
 *.local
+
+# Extra assets
+public/*
+src/styles.css
 
 # Editor directories and files
 .vscode/*
