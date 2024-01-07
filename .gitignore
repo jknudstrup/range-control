@@ -17,6 +17,7 @@ dist-ssr
 # Target code
 targetCode/targetEnv
 targetCode/target/.vscode
+targetCode/target/creds.py
 
 
 # Extra assets
