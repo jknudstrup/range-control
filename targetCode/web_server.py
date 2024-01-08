@@ -15,7 +15,6 @@ def connect():
     while wlan.isconnected() == False:
         print('Waiting for connection...')
         sleep(1)    
-    # print(wlan.ifconfig())
     ip = wlan.ifconfig()[0]
     print(f'Connected on {ip}')
     return ip
@@ -24,10 +23,8 @@ def open_socket(ip):
     # Open a socket
     address = (ip, 80)
     connection = socket.socket()
-    #connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     connection.bind(address)
     connection.listen(1)
-    # print(connection)
     return connection
 
 def webpage(temperature, state):

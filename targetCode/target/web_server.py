@@ -4,13 +4,25 @@ from time import sleep
 # from picozero import pico_temp_sensor, pico_led
 import machine
 from machine import Pin
-from creds import ssid, password
+from creds import ssid, password, controller_IP
 
 # ssid = '**REDACTED**'
 # password = '**REDACTED**'
 
+# controller_IP = "http://192.168.11.99"
+
 
 pico_led = Pin("LED", Pin.OUT)
+
+def connect_to_controller():
+    print("Connecting to controller...")
+    sock = socket.socket()
+    sock.connect((controller_IP, 8081))
+    handshake = 'GET / HTTP/1.1\r\nHost: your_server_ip\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n'
+    sock.send(handshake)
+    response = sock.recv(1024)
+    print(response)
+    print("Handshake complete")
 
 def connect():
     #Connect to WLAN
@@ -78,8 +90,12 @@ def serve(connection):
         client.close()
 
 try:
+    # machine.reset()
     ip = connect()
+    connect_to_controller()
+    # ip = controller_IP
     connection = open_socket(ip)
+    # print(connection)
     serve(connection)
 except KeyboardInterrupt:
     machine.reset()
