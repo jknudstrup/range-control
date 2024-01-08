@@ -14,6 +14,10 @@ app.use(cors());
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Hello from the Range Control Server !");
+});
+
 app.post("/message", (req, res) => {
   const msg = ServerMessageSchema.safeParse(req.body);
   if (!msg.success) {
@@ -24,6 +28,10 @@ app.post("/message", (req, res) => {
   res.sendStatus(200);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening at http://localhost:${PORT}`);
+// app.listen(PORT, () => {
+//   console.log(`Server listening at http://localhost:${PORT}`);
+// });
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server listening at http://0.0.0.0:${PORT}`);
 });

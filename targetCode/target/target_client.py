@@ -12,9 +12,11 @@ import os
 # from microdotphil.websocket import WebSocketClient
 # from websocket import WebSocket
 from microdot import Microdot, Request, Response
-import ssl
+import urequests
+import asyncio
 
 # ws = websocket.WebSocket
+PORT = 8081
 
 app = Microdot()
 
@@ -66,16 +68,43 @@ def connect_to_controller_old():
     # sock.send(msg)
     
 # async def connect_to_controller():
-#     print("Connecting to controller...")
-#     sock = socket.socket()
-#     sock.connect((controller_IP, 8081))
-#     ws = WebSocket(sock)
-#     await ws.handshake()
-#     print("Handshake complete")
-#     message = "Your message here"
-#     await ws.send(message)
-#     print("Message sent")
+#     message = {"sender": "rpi", "message": "Hello from RPi"}
 
+#     await urequests.post(f'http://{controller_IP}:8081', data=json.dumps(message))
+def ping_controller():
+    ipAddr = f'http://{controller_IP}:{PORT}'
+    response = urequests.get(ipAddr)
+    # response = urequests.post(f'http://{controller_IP}:8081', json=message)
+    if response.status_code == 200:
+        print("Successfully connected to controller and sent message.")
+        print(response.text)
+    else:
+        print("Failed to connect to controller. Status code:", response.status_code)
+    response.close()
+
+def connect_to_controller():
+    message = {"sender": "rpi", "message": "Hello from RPi"}
+    ipAddr = "http://192.168.11.99:8081/"
+    response = urequests.get(ipAddr)
+    # response = urequests.post(f'http://{controller_IP}:8081', json=message)
+    if response.status_code == 200:
+        print("Successfully connected to controller and sent message.")
+        print(response.text)
+    else:
+        print("Failed to connect to controller. Status code:", response.status_code)
+    response.close()
+
+    dummy_message = {"sender": "rpi", "message": "Hello from RPi"}
+def send_to_controller(message):
+    ipAddr = f'http://{controller_IP}:{PORT}/message'
+    response = urequests.post(ipAddr, json=message)
+    if response.status_code == 200:
+        print("Successfully connected to controller and sent message.")
+        print(response.text)
+    else:
+        print("Failed to connect to controller. Status code:", response.status_code)
+    response.close()
+    
 def connect():
     #Connect to WLAN
     wlan = network.WLAN(network.STA_IF)
@@ -145,6 +174,7 @@ def serve(connection):
 try:
     # machine.reset()
     ip = connect()
+    ping_controller()
     # connect_to_controller()
     
     app.run(port=80)
@@ -156,3 +186,16 @@ try:
 except KeyboardInterrupt:
     pico_led.off()
     machine.reset()
+
+# async def main():
+#     try:
+#         ip = connect()
+#         await connect_to_controller()
+#         app.run(port=80)
+#         pico_led.off()
+#     except KeyboardInterrupt:
+#         pico_led.off()
+#         machine.reset()
+
+# if __name__ == '__main__':
+#     asyncio.run(main())
