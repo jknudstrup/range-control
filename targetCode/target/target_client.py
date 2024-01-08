@@ -4,7 +4,7 @@ from time import sleep
 # from picozero import pico_temp_sensor, pico_led
 import machine
 from machine import Pin
-from creds import ssid, password, controller_IP
+from creds import ssid, password, controller_IP, target_name
 import json
 import struct
 import os
@@ -94,15 +94,16 @@ def connect_to_controller():
         print("Failed to connect to controller. Status code:", response.status_code)
     response.close()
 
-    dummy_message = {"sender": "rpi", "message": "Hello from RPi"}
 def send_to_controller(message):
     ipAddr = f'http://{controller_IP}:{PORT}/message'
-    response = urequests.post(ipAddr, json=message)
+    jsonMessage = {"sender": target_name, "message": message}
+    response = urequests.post(ipAddr, json=jsonMessage)
     if response.status_code == 200:
         print("Successfully connected to controller and sent message.")
         print(response.text)
     else:
         print("Failed to connect to controller. Status code:", response.status_code)
+        print(response.text)
     response.close()
     
 def connect():
@@ -166,36 +167,18 @@ def serve(connection):
         elif request =='/lightoff?':
             pico_led.off()
             state = "OFF"
-        # temperature = pico_temp_sensor.temp
         html = webpage(temperature, state)
         client.send(html)
         client.close()
 
 try:
-    # machine.reset()
     ip = connect()
-    ping_controller()
-    # connect_to_controller()
-    
-    app.run(port=80)
-    pico_led.off()
-    # ip = controller_IP
+    # send_to_controller("Hello from RPi")
+    print("Starting Microdot server...")
+    app.run(port=80, host=ip)
     # connection = open_socket(ip)
-    # print(connection)
     # serve(connection)
+    pico_led.off()
 except KeyboardInterrupt:
     pico_led.off()
     machine.reset()
-
-# async def main():
-#     try:
-#         ip = connect()
-#         await connect_to_controller()
-#         app.run(port=80)
-#         pico_led.off()
-#     except KeyboardInterrupt:
-#         pico_led.off()
-#         machine.reset()
-
-# if __name__ == '__main__':
-#     asyncio.run(main())
