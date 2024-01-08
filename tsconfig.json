@@ -17,6 +17,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
 
     /* Linting */
     "strict": true,

@@ -5,24 +5,51 @@ from time import sleep
 import machine
 from machine import Pin
 from creds import ssid, password, controller_IP
-
-# ssid = '**REDACTED**'
-# password = '**REDACTED**'
-
-# controller_IP = "http://192.168.11.99"
+import json
+import struct
+import os
 
 
 pico_led = Pin("LED", Pin.OUT)
+
+def send_frame(sock, opcode, data):
+   print("Sending frame...")
+
+
+   fin = 0x80
+   mask = 0x00
+   length = len(data)
+   if length <= 125:
+       header = struct.pack('!BB', fin | opcode, mask | length)
+   elif length > 125 and length < 65536:
+       header = struct.pack('!BBH', fin | opcode, mask | 126, length)
+   else:
+       header = struct.pack('!BBQ', fin | opcode, mask | 127, length)
+
+   masking_key = os.urandom(4)
+   data = bytes([b ^ k for b, k in zip(data, masking_key * (len(data) // 4) + masking_key[:len(data) % 4])])
+   sock.send(header + data)
 
 def connect_to_controller():
     print("Connecting to controller...")
     sock = socket.socket()
     sock.connect((controller_IP, 8081))
-    handshake = 'GET / HTTP/1.1\r\nHost: your_server_ip\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n'
+    handshake = f'GET / HTTP/1.1\r\nHost: {controller_IP}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n'
     sock.send(handshake)
     response = sock.recv(1024)
     print(response)
     print("Handshake complete")
+    sleep(1)
+    message = "Your message here"
+    # sock.send(message.encode())
+    send_frame(sock, 0x01, message.encode())
+    # print("Sending encoded message...")
+    # msgJson = json.dumps({"sender": "rpi", "message": "Hello from RPi"})
+    # msg = msgJson.encode(json.dumps([json.dumps({"msg": msgJson})]))
+    # sock.send(json.dumps([json.dumps({"msg": msgJson})]))
+    # print("Sending some guys thing from Stackoverflow...")
+    # sock.send(json.dumps([json.dumps({'msg': 'connect', 'version': '1', 'support': ['1', 'pre2', 'pre1']})]))
+    # sock.send(msg)
 
 def connect():
     #Connect to WLAN
@@ -35,6 +62,7 @@ def connect():
     # print(wlan.ifconfig())
     ip = wlan.ifconfig()[0]
     print(f'Connected on {ip}')
+    pico_led.on()
     return ip
 
 def open_socket(ip):
@@ -93,9 +121,11 @@ try:
     # machine.reset()
     ip = connect()
     connect_to_controller()
+    pico_led.off()
     # ip = controller_IP
-    connection = open_socket(ip)
+    # connection = open_socket(ip)
     # print(connection)
-    serve(connection)
+    # serve(connection)
 except KeyboardInterrupt:
+    pico_led.off()
     machine.reset()
