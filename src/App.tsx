@@ -1,42 +1,33 @@
-import { useEffect, useRef } from "react";
-// import { WebSocket } from "ws";
+import { useEffect } from "react";
 import { ServerMessage } from "./server/serverTypes";
 const PORT = 8081;
 
-export const App = () => {
-  const socketRef = useRef<WebSocket | null>(null);
-
-  const sendToServer = (message: string) => {
-    const serverMessage: ServerMessage = {
-      sender: "range-control",
-      message,
-    };
-    socketRef.current?.send(JSON.stringify(serverMessage));
+const sendToServer = async (message: string) => {
+  const serverMessage: ServerMessage = {
+    sender: "range-control",
+    message,
   };
+  await fetch(`http://localhost:${PORT}/message`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(serverMessage),
+  });
+};
 
+export const App = () => {
   useEffect(() => {
-    socketRef.current = new WebSocket(`ws://localhost:${PORT}`);
-
-    socketRef.current?.addEventListener("open", function (event) {
-      sendToServer("hello server!!!");
-    });
-
-    socketRef.current?.addEventListener("message", function (event) {
-      console.log("Message from server: ", event.data);
-    });
-
-    return () => {
-      socketRef.current?.close();
-    };
+    sendToServer("hello server!!!");
   }, []);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const testMessage: ServerMessage = {
       sender: "range-control",
       message: "a really cool message",
     };
 
-    socketRef.current?.send(JSON.stringify(testMessage));
+    await sendToServer(testMessage.message);
   };
 
   return (

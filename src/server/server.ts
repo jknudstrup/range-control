@@ -1,35 +1,29 @@
-// import { WebSocket } from "ws";
-
+import express from "express";
+import cors from "cors";
 import { z } from "zod";
-import WebSocket, { WebSocketServer } from "ws";
-// import { ServerMessageSchema } from "./serverTypes";
+
+const PORT = 8081;
 
 export const ServerMessageSchema = z.object({
   sender: z.string(),
   message: z.string(),
 });
 
-// const wss = new WebSocket.Server({ port: 8080 });
+const app = express();
+app.use(cors());
 
-const wss = new WebSocketServer({ port: 8081 });
-const address = wss.address();
-console.log(`Serving at:`);
-console.log(address);
+app.use(express.json());
 
-wss.on("connection", (ws: WebSocket) => {
-  console.log("New client connected");
+app.post("/message", (req, res) => {
+  const msg = ServerMessageSchema.safeParse(req.body);
+  if (!msg.success) {
+    return res.status(400).send("Invalid request");
+  }
+  console.log(`Received message from ${msg.data.sender}: ${msg.data.message}`);
+  // Process message here
+  res.sendStatus(200);
+});
 
-  ws.on("message", (message: string) => {
-    const msg = ServerMessageSchema.parse(JSON.parse(message));
-    console.log(`Received message from ${msg.sender}: ${msg.message}`);
-    // Process message here
-  });
-
-  ws.on("error", (err) => {
-    console.error(err);
-  });
-
-  ws.on("close", () => {
-    console.log("Client disconnected");
-  });
+app.listen(PORT, () => {
+  console.log(`Server listening at http://localhost:${PORT}`);
 });

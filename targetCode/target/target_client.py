@@ -8,6 +8,20 @@ from creds import ssid, password, controller_IP
 import json
 import struct
 import os
+# from microdot import WebSocketClient
+# from microdotphil.websocket import WebSocketClient
+# from websocket import WebSocket
+from microdot import Microdot, Request, Response
+import ssl
+
+# ws = websocket.WebSocket
+
+app = Microdot()
+
+@app.route('/')
+def index(request):
+    return 'Hello, from Pico'
+
 
 
 pico_led = Pin("LED", Pin.OUT)
@@ -30,7 +44,7 @@ def send_frame(sock, opcode, data):
    data = bytes([b ^ k for b, k in zip(data, masking_key * (len(data) // 4) + masking_key[:len(data) % 4])])
    sock.send(header + data)
 
-def connect_to_controller():
+def connect_to_controller_old():
     print("Connecting to controller...")
     sock = socket.socket()
     sock.connect((controller_IP, 8081))
@@ -50,6 +64,17 @@ def connect_to_controller():
     # print("Sending some guys thing from Stackoverflow...")
     # sock.send(json.dumps([json.dumps({'msg': 'connect', 'version': '1', 'support': ['1', 'pre2', 'pre1']})]))
     # sock.send(msg)
+    
+# async def connect_to_controller():
+#     print("Connecting to controller...")
+#     sock = socket.socket()
+#     sock.connect((controller_IP, 8081))
+#     ws = WebSocket(sock)
+#     await ws.handshake()
+#     print("Handshake complete")
+#     message = "Your message here"
+#     await ws.send(message)
+#     print("Message sent")
 
 def connect():
     #Connect to WLAN
@@ -120,7 +145,9 @@ def serve(connection):
 try:
     # machine.reset()
     ip = connect()
-    connect_to_controller()
+    # connect_to_controller()
+    
+    app.run(port=80)
     pico_led.off()
     # ip = controller_IP
     # connection = open_socket(ip)

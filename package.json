@@ -13,12 +13,16 @@
     "serveController": "node --loader ts-node/esm ./src/server/server.ts"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "ts-node": "^10.9.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@types/ws": "^8.5.10",
