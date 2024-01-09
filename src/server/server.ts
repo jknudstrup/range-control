@@ -40,12 +40,16 @@ export const parseReadableStream = async (response: Response) => {
 
 const messageTarget = async (target: Target, message: string) => {
   const ip = targets[target];
-  const url = `http://${ip}/`;
+  const url = `http://${ip}/target`;
+  const payload = {
+    time_duration: 3000,
+  };
   const response = await fetch(url, {
-    method: "GET",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify(payload),
   });
   return response;
 };
