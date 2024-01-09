@@ -1,76 +1,72 @@
 import network
 import socket
 from time import sleep
-# from picozero import pico_temp_sensor, pico_led
 import machine
-from machine import Pin
+from machine import Pin, PWM, ADC
 from creds import ssid, password, controller_IP, target_name
 import json
 import struct
 import os
-# from microdot import WebSocketClient
-# from microdotphil.websocket import WebSocketClient
-# from websocket import WebSocket
 from microdot import Microdot, Request, Response
 import urequests
 import asyncio
+import utime
+
+servo = PWM(Pin(16))
+servo.freq(50)
+
+piezo_in = ADC(Pin(26))
+
+def interval_mapping(x, in_min, in_max, out_min, out_max):
+ return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def servo_write(pin,angle):
+ pulse_width=interval_mapping(angle, 0, 180, 0.5,2.5)
+ duty=int(interval_mapping(pulse_width, 0, 20, 0,65535))
+ pin.duty_u16(duty)
+
+def activate(time_duration):
+# Activate servo to stand up. If piezo exceeds threshold, lay back down and return true
+# If time is exceeded, lay back down and return false
+    servo_write(servo, 90)
+    utime.sleep(.5)
+    start_time = utime.ticks_ms()
+    # while utime.ticks_diff(utime.ticks_ms(), start_time) < :
+    while utime.ticks_diff(utime.ticks_ms(), start_time) < time_duration:
+        pot_value = piezo_in.read_u16()
+        if pot_value > 10000:
+            servo_write(servo, 0)
+            return True
+
+    return False
 
 # ws = websocket.WebSocket
 PORT = 8081
 
 app = Microdot()
 
-@app.route('/')
+@app.get('/')
 def index(request):
     return 'Hello, from Pico'
 
+@app.post('/target')
+def handle_target(request):
+   data = json.loads(request.data)
+   time_duration = data.get('time_duration', None)
+   if time_duration is not None:
+       # Call your activate function here with time_duration
+       was_hit = activate(time_duration)
+       result = "Hit" if was_hit else "Miss"
+       jsonMessage = {"sender": target_name, "message": result}
+       return Response(json.dumps(jsonMessage), 200, 'json')
+    #    return Response(json.dumps(jsonMessage), 200, 'json')
+    #    return Response(str(result), mimetype='application/json')
+   else:
+       return Response('Invalid request', 400)
 
 
 pico_led = Pin("LED", Pin.OUT)
 
-def send_frame(sock, opcode, data):
-   print("Sending frame...")
-
-
-   fin = 0x80
-   mask = 0x00
-   length = len(data)
-   if length <= 125:
-       header = struct.pack('!BB', fin | opcode, mask | length)
-   elif length > 125 and length < 65536:
-       header = struct.pack('!BBH', fin | opcode, mask | 126, length)
-   else:
-       header = struct.pack('!BBQ', fin | opcode, mask | 127, length)
-
-   masking_key = os.urandom(4)
-   data = bytes([b ^ k for b, k in zip(data, masking_key * (len(data) // 4) + masking_key[:len(data) % 4])])
-   sock.send(header + data)
-
-def connect_to_controller_old():
-    print("Connecting to controller...")
-    sock = socket.socket()
-    sock.connect((controller_IP, 8081))
-    handshake = f'GET / HTTP/1.1\r\nHost: {controller_IP}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n'
-    sock.send(handshake)
-    response = sock.recv(1024)
-    print(response)
-    print("Handshake complete")
-    sleep(1)
-    message = "Your message here"
-    # sock.send(message.encode())
-    send_frame(sock, 0x01, message.encode())
-    # print("Sending encoded message...")
-    # msgJson = json.dumps({"sender": "rpi", "message": "Hello from RPi"})
-    # msg = msgJson.encode(json.dumps([json.dumps({"msg": msgJson})]))
-    # sock.send(json.dumps([json.dumps({"msg": msgJson})]))
-    # print("Sending some guys thing from Stackoverflow...")
-    # sock.send(json.dumps([json.dumps({'msg': 'connect', 'version': '1', 'support': ['1', 'pre2', 'pre1']})]))
-    # sock.send(msg)
-    
-# async def connect_to_controller():
-#     message = {"sender": "rpi", "message": "Hello from RPi"}
-
-#     await urequests.post(f'http://{controller_IP}:8081', data=json.dumps(message))
 def ping_controller():
     ipAddr = f'http://{controller_IP}:{PORT}'
     response = urequests.get(ipAddr)
