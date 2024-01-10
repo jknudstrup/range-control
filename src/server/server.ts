@@ -4,7 +4,7 @@ import { z } from "zod";
 
 // import { Target, TargetSchema } from "./serverTypes";
 
-const TargetSchema = z.enum(["target_1"]);
+const TargetSchema = z.enum(["target_1", "target_2"]);
 
 export type Target = z.infer<typeof TargetSchema>;
 
@@ -12,6 +12,7 @@ const PORT = 8081;
 
 const targets: Record<Target, string> = {
   target_1: "192.168.11.169",
+  target_2: "192.168.11.136",
 };
 
 export const ServerMessageSchema = z.object({
@@ -40,6 +41,8 @@ export const parseReadableStream = async (response: Response) => {
 
 const messageTarget = async (target: Target, message: string) => {
   const ip = targets[target];
+
+  console.log(`Dispatching activation request to: ${target} at: ${ip}`);
   const url = `http://${ip}/target`;
   const payload = {
     time_duration: 3000,

@@ -62,6 +62,14 @@ export const App = () => {
           Trigger target 1
         </button>
       </div>
+      <div>
+        <button
+          className="bg-blue-700"
+          onClick={() => triggerTarget("target_2")}
+        >
+          Trigger target 2
+        </button>
+      </div>
     </>
   );
 };
